@@ -21,7 +21,7 @@ var TEST_TCP_RESOURCE = `
 resource "bigip_ltm_profile_tcp" "test-tcp" {
             name = "/Common/sanjose-tcp-wan-profile"
             defaults_from = "/Common/tcp-wan-optimized"
-						partition = "Common"
+            partition = "Common"
             idle_timeout = 300
             close_wait_timeout = 5
             finwait_2timeout = 5
@@ -29,6 +29,7 @@ resource "bigip_ltm_profile_tcp" "test-tcp" {
             keepalive_interval = 1700
             deferred_accept = "enabled"
             fast_open = "enabled"
+	    max_segment_size = 1440
         }
 `
 
@@ -54,6 +55,7 @@ func TestAccBigipLtmProfileTcp_create(t *testing.T) {
 					resource.TestCheckResourceAttr("bigip_ltm_profile_tcp.test-tcp", "keepalive_interval", "1700"),
 					resource.TestCheckResourceAttr("bigip_ltm_profile_tcp.test-tcp", "deferred_accept", "enabled"),
 					resource.TestCheckResourceAttr("bigip_ltm_profile_tcp.test-tcp", "fast_open", "enabled"),
+					resource.TestCheckResourceAttr("bigip_ltm_profile_tcp.test-tcp", "max_segment_size", "1460"),
 				),
 			},
 		},

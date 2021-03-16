@@ -28,19 +28,19 @@ func resourceBigipLtmProfileTcp() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validateF5Name,
-				Description:  "Name of the TCP Profile",
+				Description:  "Name of the TCP profile",
 			},
 			"partition": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "name of partition",
+				Description: "Name of partition",
 			},
 			"defaults_from": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validateF5Name,
-				Description:  "Use the parent tcp profile",
+				Description:  "Use the parent TCP profile",
 			},
 			"idle_timeout": {
 				Type:        schema.TypeInt,
@@ -76,13 +76,19 @@ func resourceBigipLtmProfileTcp() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "If enabled, ADC will defer allocating resources to a connection until some payload data has arrived from the client (default false). This may help minimize the impact of certain DoS attacks but adds undesirable latency under normal conditions. Note: ‘deferredAccept’ is incompatible with server-speaks-first application protocols,Default : disabled",
+				Description: "If enabled (default disabled), ADC will defer allocating resources to a connection until some payload data has arrived from the client (default false). This may help minimize the impact of certain DoS attacks but adds undesirable latency under normal conditions. Note: ‘deferredAccept’ is incompatible with server-speaks-first application protocols",
 			},
 			"fast_open": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "If enabled (default), the system can use the TCP Fast Open protocol extension to reduce latency by sending payload data with initial SYN",
+				Description: "If enabled (default enabled), the system can use the TCP Fast Open protocol extension to reduce latency by sending payload data with initial SYN",
+			},
+			"max_segment_size": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "Largest amount of data (default 1460) that the system can receive in a single TCP segment, not including the TCP and IP headers. If the value is 0 (zero), the system calculates the value from the maximum transmission unit (MTU)",
 			},
 		},
 	}
@@ -102,6 +108,7 @@ func resourceBigipLtmProfileTcpCreate(d *schema.ResourceData, meta interface{}) 
 		KeepAliveInterval: d.Get("keepalive_interval").(int),
 		DeferredAccept:    d.Get("deferred_accept").(string),
 		FastOpen:          d.Get("fast_open").(string),
+		MaxSegmentSize:    d.Get("max_segment_size").(int),
 	}
 	log.Println("[INFO] Creating TCP profile")
 	err := client.CreateTcp(tcpProfileConfig)
@@ -128,6 +135,7 @@ func resourceBigipLtmProfileTcpUpdate(d *schema.ResourceData, meta interface{}) 
 		KeepAliveInterval: d.Get("keepalive_interval").(int),
 		DeferredAccept:    d.Get("deferred_accept").(string),
 		FastOpen:          d.Get("fast_open").(string),
+		MaxSegmentSize:    d.Get("max_segment_size").(int),
 	}
 	err := client.ModifyTcp(name, tcpProfileConfig)
 	if err != nil {
@@ -185,6 +193,11 @@ func resourceBigipLtmProfileTcpRead(d *schema.ResourceData, meta interface{}) er
 	}
 	if _, ok := d.GetOk("fast_open"); ok {
 		_ = d.Set("fast_open", obj.FastOpen)
+	}
+	if _, ok := d.GetOk("max_segment_size"); ok {
+		if err := d.Set("max_segment_size", obj.MaxSegmentSize); err != nil {
+			return fmt.Errorf("[DEBUG] Error saving MaxSegmentSize to state for tcp profile  (%s): %s", d.Id(), err)
+		}
 	}
 	return nil
 }
